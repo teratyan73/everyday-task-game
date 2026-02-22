@@ -8,6 +8,7 @@ import com.example.everydaytaskgame.data.db.entity.TaskEntity
 import com.example.everydaytaskgame.data.repository.AppStateRepository
 import com.example.everydaytaskgame.data.repository.TaskRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -37,14 +38,26 @@ class HomeViewModel @Inject constructor(
     val uiState: StateFlow<HomeUiState> = _uiState.asStateFlow()
 
     init {
-        // アプリ起動時の日付リセット処理を実行してから UI の監視を開始する
+        // 起動時の日付リセット処理
         viewModelScope.launch {
             try {
                 handleAppLaunch()
-                observeState()
-            } catch (e: Exception) {
-                // 初期化中に例外が発生した場合でもローディング状態を解除する
+            } catch (e: CancellationException) {
+                throw e
+            } catch (_: Exception) {
+                // DB 初期化に失敗してもアプリは動作させる
+            } finally {
                 _uiState.value = _uiState.value.copy(isLoading = false)
+            }
+        }
+        // DB 状態の監視は独立コルーチンで開始する
+        viewModelScope.launch {
+            try {
+                observeState()
+            } catch (e: CancellationException) {
+                throw e
+            } catch (_: Exception) {
+                // Flow 監視の例外は無視する
             }
         }
     }
@@ -61,10 +74,11 @@ class HomeViewModel @Inject constructor(
     private suspend fun handleAppLaunch() {
         val today = LocalDate.now().toString()
         val appState = appStateRepository.getOrCreateAppState()
+        // キャラクターレコードが存在しない場合に備えて必ず初期化する
+        appStateRepository.getOrCreateCharacter()
 
         if (appState.lastLaunchDate == today) {
-            // 同日中の再起動 → 何もしない
-            _uiState.value = _uiState.value.copy(isLoading = false)
+            // 同日中の再起動 → 何もしない（isLoading は finally で解除）
             return
         }
 
@@ -91,8 +105,6 @@ class HomeViewModel @Inject constructor(
         // キャラクターポイントを再計算
         val updatedTasks = taskRepository.getAllTasks()
         recalculateCharacter(updatedTasks, newGlobalStreak)
-
-        _uiState.value = _uiState.value.copy(isLoading = false)
     }
 
     // ---- リアルタイム観測 ----
