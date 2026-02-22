@@ -39,8 +39,13 @@ class HomeViewModel @Inject constructor(
     init {
         // アプリ起動時の日付リセット処理を実行してから UI の監視を開始する
         viewModelScope.launch {
-            handleAppLaunch()
-            observeState()
+            try {
+                handleAppLaunch()
+                observeState()
+            } catch (e: Exception) {
+                // 初期化中に例外が発生した場合でもローディング状態を解除する
+                _uiState.value = _uiState.value.copy(isLoading = false)
+            }
         }
     }
 

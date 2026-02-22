@@ -1,5 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <!-- Compose が全画面を管理するため、Activity には NoActionBar テーマを適用する -->
-    <style name="Theme.EverydayTaskGame" parent="android:Theme.Material.Light.NoActionBar" />
+    <style name="Theme.EverydayTaskGame" parent="android:Theme.Material.Light.NoActionBar">
+        <!-- Compose が描画する前のウィンドウ背景を白にして黒画面を防ぐ -->
+        <item name="android:windowBackground">@android:color/white</item>
+        <item name="android:windowIsTranslucent">false</item>
+    </style>
 </resources>
