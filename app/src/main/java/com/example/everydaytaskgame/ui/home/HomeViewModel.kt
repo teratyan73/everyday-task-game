@@ -134,9 +134,11 @@ class HomeViewModel @Inject constructor(
                 task.copy(isCompletedToday = checking, streak = newStreak)
             )
 
-            if (checking) {
-                taskRepository.recordCompletion(taskId, LocalDate.now().toString())
-            }
+            taskRepository.recordCompletion(
+                taskId = taskId,
+                date = LocalDate.now().toString(),
+                completed = checking
+            )
 
             // キャラクターポイントを再計算
             val allTasks = taskRepository.getAllTasks()
