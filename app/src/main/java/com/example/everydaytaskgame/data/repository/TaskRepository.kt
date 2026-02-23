@@ -37,12 +37,12 @@ class TaskRepository @Inject constructor(
      * 指定タスクの指定日の完了を記録します。
      * 同一タスク・同一日の記録が存在する場合は上書きします（REPLACE）。
      */
-    suspend fun recordCompletion(taskId: Int, date: String) {
+    suspend fun recordCompletion(taskId: Int, date: String, completed: Boolean = true) {
         dailyRecordDao.insert(
             DailyRecordEntity(
                 taskId = taskId,
                 date = date,
-                completed = true
+                completed = completed
             )
         )
     }
